@@ -26,10 +26,10 @@
     </div>
 
     <script>
-        // 1. YOUR DATA HERE
-         const coinAddr = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
-         const nftAddr= "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
-         const vaultAddr = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707";
+        // 1.Enter Data from deploy.cjs
+         const coinAddr = "0x09635F643e140090A9A8Dcd712eD6285858ceBef";
+         const nftAddr= "0xc5a5C42992dECbae36851359345FE25997F5C42d";
+         const vaultAddr = "0x67d269191c92Caf3cD7723F116c85e6E9bf55933";
 
 
         // 2. PASTE YOUR ABIs (Just the 'abi' array from your artifacts)
@@ -351,6 +351,28 @@
     } ];
 
         let signer;
+
+
+          async function loadAddresses() {
+              try {
+                  const response = await fetch('addresses.json');
+                  const data = await response.json();
+                  
+                  coinAddr = data.coin;
+                  nftAddr = data.nft;
+                  vaultAddr = data.vault;
+                  
+                  console.log("Addresses loaded automatically:", data);
+                  
+                  // Now you can initialize your contracts here
+                  initContracts(); 
+              } catch (error) {
+                  console.error("Could not load addresses. Make sure you ran the deploy script!", error);
+              }
+          }
+
+// Call this as soon as the window loads
+          window.onload = loadAddresses;
 
           async function connectWallet() {
           

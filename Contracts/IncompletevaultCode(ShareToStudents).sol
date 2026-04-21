@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
-
+interface IEngineeringNFT {
+    function mintMembership(address to, string memory uri) external;
+}
 contract Vault {
     IERC20 public immutable token;
-    address public nftContract;
-    
+    IEngineeringNFT public nftContract;
+    address public constant admin = 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC;    
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
 
-    address public admin; // Made public for easier testing
+    // address public admin;  Made public for easier testing
     uint256 public feePercent = 2; // Example: 2% fee
 
     // Governance Membership data structures
@@ -32,8 +34,8 @@ contract Vault {
 
     constructor(address _token, address _nft) {
         token = IERC20(_token);
-        nftContract = _nft; // SET THE NFT ADDRESS HERE 
-        admin = msg.sender; // The deployer is the admin who receives fees
+        nftContract = IEngineeringNFT(_nft); // SET THE NFT ADDRESS HERE 
+        // admin = msg.sender; The deployer is the admin who receives fees
     }
 
     function _mint(address _to, uint256 _shares) private {
@@ -58,6 +60,7 @@ contract Vault {
         }
 
         _mint(msg.sender, shares);
+        nftContract.mintMembership(msg.sender, "https://ipfs.io/ipfs/bafkreielfgzdishk5yetypvmr3aqgbsn5fkdf6zpvlbgsk2jgtom67dubi");
         token.transferFrom(msg.sender, address(this), _amount);
     }
 
