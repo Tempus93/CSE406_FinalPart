@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>DeFi Vault - CSE 406</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        .card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; max-width: 500px; }
+        button { margin: 5px; padding: 10px; cursor: pointer; }
+        .status { font-weight: bold; color: #2c3e50; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>DeFi Vault Interface</h2>
+        <p>Status: <span id="status" class="status">Not Connected</span></p>
+        <button onclick="connectWallet()">Connect Wallet</button>
+        <hr>
+        
+        <h3>Manage Funds</h3>
+        <input type="number" id="amount" placeholder="Amount of Coins">
+        <br>
+        <button onclick="approveVault()">1. Approve Vault</button>
+        <button onclick="depositCoins()">2. Deposit & Mint NFT</button>
+        <button onclick="withdrawCoins()">3. Withdraw (Burn NFT)</button>
+    </div>
+
+    <script>
+        // 1. YOUR DATA HERE
+         const coinAddr = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
+         const nftAddr= "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9";
+         const vaultAddr = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707";
+
+
+        // 2. PASTE YOUR ABIs (Just the 'abi' array from your artifacts)
+        const coinABI = [  {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "spender",
+          "type": "address"
+        }
+      ],
+      "name": "allowance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "spender",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "approve",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalSupply",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "transfer",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "transferFrom",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    } ];
+        const vaultABI = [{
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_token",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_nft",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "_balanceOfmembershipToken",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "_membershipTokenOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "_ownerOfmembershipToken",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "admin",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "deposit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "feePercent",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nftContract",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "token",
+      "outputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalSupply",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_shares",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    } ];
+
+        let signer;
+
+          async function connectWallet() {
+          
+            if (window.ethereum) {
+                const provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+                document.getElementById('status').innerText = "Connected: " + await signer.getAddress();
+            } else {
+                alert("Please install MetaMask!");
+            }
+        }
+
+        async function approveVault() {
+            const amount = document.getElementById('amount').value;
+            const coinContract = new ethers.Contract(coinAddr, coinABI, signer);
+            const tx = await coinContract.approve(vaultAddr, ethers.parseUnits(amount, 18));
+            await tx.wait();
+            alert("Step 1 Complete: Vault Approved!");
+        }
+
+        async function depositCoins() {
+            const amount = document.getElementById('amount').value;
+            const vaultContract = new ethers.Contract(vaultAddr, vaultABI, signer);
+            // This triggers Task 3 logic: Minting the NFT
+            const tx = await vaultContract.deposit(ethers.parseUnits(amount, 18));
+            await tx.wait();
+            alert("Step 2 Complete: Deposited! Check your wallet for the Membership NFT.");
+        }
+
+        async function withdrawCoins() {
+            const amount = document.getElementById('amount').value;
+            const vaultContract = new ethers.Contract(vaultAddr, vaultABI, signer);
+            // This triggers Task 2 (Fee) and Task 4 (Revocation)
+            const tx = await vaultContract.withdraw(ethers.parseUnits(amount, 18));
+            await tx.wait();
+            alert("Withdrawn! Fee sent to admin and NFT revoked.");
+        }
+    </script>
+</body>
+</html>

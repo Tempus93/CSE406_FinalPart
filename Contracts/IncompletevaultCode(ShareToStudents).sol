@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 contract Vault {
     IERC20 public immutable token;
+    address public nftContract;
     
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
@@ -29,8 +30,9 @@ contract Vault {
         }
     }
 
-    constructor(address _token) {
+    constructor(address _token, address _nft) {
         token = IERC20(_token);
+        nftContract = _nft; // SET THE NFT ADDRESS HERE 
         admin = msg.sender; // The deployer is the admin who receives fees
     }
 
